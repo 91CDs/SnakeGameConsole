@@ -19,19 +19,29 @@ class Food
     {
         P = new Vector2(x, y);
     }
-    static Food generateFood(int maxX, int maxY, int time)
+    public void generateNewFood(int maxX, int maxY, int time)
     {
         Random randomX = new Random(time);
         Random randomY = new Random(time);
         int x = randomX.Next(0, maxX);
         int y = randomY.Next(0, maxY);
-        return new Food(x, y);
+        P = new Vector2(x, y);
     }
 }
 class Snake
 {
-    public SnakePart Head { get; set; } = new SnakePart();
-    public List<SnakePart> Body { get; set;} = new List<SnakePart>();
+    public SnakePart Head { get; set; }
+    public List<SnakePart> Body { get; set;}
+    public Snake() 
+    {
+        Head = new SnakePart();
+        Body = new List<SnakePart>();
+    }
+    public Snake(Snake snake)
+    {
+        Head = snake.Head;
+        Body = snake.Body;
+    }
     public List<Vector2> getAllPoints()
     {
         List<Vector2> allPoints = new List<Vector2>();
@@ -69,7 +79,7 @@ class Snake
     }
     public void Walk() 
     {
-        var head = Head;
+        var head = new SnakePart(Head);
         var hdir = Head.Direction;
         var hx = Convert.ToInt32(Head.P.X);
         var hy = Convert.ToInt32(Head.P.Y);
@@ -93,16 +103,19 @@ class Snake
 
         if (Body.Count != 0)
         {
+            SnakePart prevPart = new SnakePart(Body.First());
+            SnakePart temp;
             for (int i = 0; i < Body.Count; i++)
             {
-                var prevPart = Body[i];
                 if (i == 0)
-                {
+                {  
                     Body[i].Move(head);
                 }
                 else
                 {
+                    temp = new SnakePart(Body[i]); 
                     Body[i].Move(prevPart);
+                    prevPart = temp; 
                 }
             }
         }
@@ -116,6 +129,11 @@ class SnakePart
     {
         P = new Vector2(3,10);
         Direction = Direction.East;
+    }
+    public SnakePart(SnakePart snake) 
+    {
+        P = snake.P;
+        Direction = snake.Direction;
     }
     public SnakePart(int x, int y, Direction _Direction)
     {
@@ -134,4 +152,11 @@ class SnakePart
         P = point;
         Direction = _Direction;
     }
+}
+enum SnakeState
+{
+    Dead,
+    Alive,
+    Eating,
+    Win
 }

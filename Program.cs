@@ -1,5 +1,5 @@
-﻿using System.Text;
-using WenceyWang.FIGlet;
+﻿using System.Numerics;
+using System.Text;
 
 namespace Snake;
 enum Sprite {
@@ -10,100 +10,16 @@ enum Sprite {
     SnakeBody,
     Food
 }
-class SnakeGame
+
+public static class extensionMethods
 {
-    #region Setup
-    static void defaultSetup()
+    public static string ExtendedToString(this List<Vector2> list)
     {
-        Console.ForegroundColor = ConsoleColor.Gray;
-    }
-    static void setup()
-    {
-        Console.Clear();
-        Console.ForegroundColor = ConsoleColor.Cyan;
-    }
-    #endregion
-    #region Menu
-
-    static void removeMenu(string[] menus, string cursor)
-    {
-        int initialRow = Console.CursorTop - 1; 
-        int backspaceNum = 100;
-        string backspaces = new StringBuilder().Insert(0, "\b \b", backspaceNum).ToString();
-        for (int i = 0; i < menus.Length; i++)
-        {
-            Console.SetCursorPosition(backspaceNum, initialRow - i);
-            Console.Write(backspaces);
-        }
-    }
-    static void addMenu(string[] menus, string cursor, int cursorIndex) 
-    {
-        for (int i = 0; i < menus.Length; i++)
-        {
-            if (i == cursorIndex) 
-            {
-                Console.WriteLine(menus[i] + cursor);
-            } 
-            else
-            {
-                Console.WriteLine(menus[i]);
-            }
-        }
-    }
-    static string displayMenu()
-    {
-        var display = new AsciiArt("Snake Game");
-        Console.WriteLine(display.ToString());   
-        Console.WriteLine("By 91CDs");
-        Console.WriteLine();
-
-        string[] menus = { "Mechanics", "Play", "Exit" };
-        string cursor = "  <";  
-
-        ConsoleKey keypress;
-        int cursorIndex = 0;
-        int loop = 0;
-
-        do
-        {   
-            if (loop != 0)
-            {
-                removeMenu(menus, cursor);
-            }
-            addMenu(menus, cursor,cursorIndex);
-            loop++;
-
-            keypress = Console.ReadKey(true).Key;
-            if (keypress == ConsoleKey.UpArrow && cursorIndex != 0)
-            {
-                cursorIndex--;
-            } 
-            if (keypress == ConsoleKey.DownArrow && cursorIndex < menus.Length - 1)
-            {
-                cursorIndex++;
-            }
-        } while (keypress != ConsoleKey.Enter);
-        
-        removeMenu(menus, cursor);
-        return menus[cursorIndex];
-    }
-    #endregion
-    #region Mechanics
-    static void displayMechanics()
-    {
-        Console.WriteLine("Mechanics");
-        Console.WriteLine(
-    @"
-    In the game of Snake, the player uses the arrow keys to move a 'snake' around the board. 
-
-    As the snake finds food, it eats the food, and thereby grows larger. The game ends when the snake either 
-    moves off the screen or moves into itself. The goal is to make the snake as large as possible before that 
-    happens."
-        );
-        Console.WriteLine("Press any key to go back to menu screen");
-        Console.ReadKey(true);
-    }
-    #endregion
+        return String.Join(" , ", list.Select(x => x.ToString()));
+    } 
+}
+partial class SnakeGame
+{
     // Snake Board (0, 0) starts at top left of the screen 
     static (int, int) getcursorPos(int x, int y) 
     {
@@ -113,14 +29,16 @@ class SnakeGame
     }
     static void displaySnake(Snake snake, Food food, string[] board)
     {
-        var SnakePoints = snake.getAllPoints();
+        List<Vector2> SnakePoints = snake.getAllPoints();
+        Console.Write("\b \b\b \b\b \b");
+        Console.WriteLine(SnakePoints.ExtendedToString());
         var (initX, initY) = Console.GetCursorPosition();
         for (int i = 0; i < SnakePoints.Count; i++)
         {
             var point = SnakePoints[i];
             var (cursorX, cursorY) = getcursorPos(Convert.ToInt32(point.X), Convert.ToInt32(point.Y));
             Console.SetCursorPosition(cursorX, cursorY);
-            if (i == 0) 
+            if (i == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.Write(board[(int)Sprite.SnakeHead]);
@@ -139,15 +57,12 @@ class SnakeGame
 
         Console.SetCursorPosition(initX, initY);
     }
-    static void displaySnakeBoard(Snake snake, Food food)
+    static void displaySnakeBoard(Snake snake, Food food, int maxX, int maxY)
     {
-        Console.Clear();
+        Console.SetCursorPosition(0,0);
         Console.ForegroundColor = ConsoleColor.DarkGray;
         string path = @"./Sprite.txt";
         string[] board = File.ReadAllLines(path);
-
-        int maxX = 20;
-        int maxY = 20;
 
         for (int i = 0; i < maxY; i++)
         {   
@@ -163,19 +78,52 @@ class SnakeGame
 
         displaySnake(snake, food, board);
     }
-    static void checkSnakeState()
+
+    static List<Vector2> getBoundaryPositions(int maxX, int maxY)
     {
-        
+        List<Vector2> boundaryPos = new List<Vector2>();
+        for (int i = 0; i < maxX; i++)
+        {
+            boundaryPos.Add(new Vector2(i,-1));
+            boundaryPos.Add(new Vector2(i,maxY));
+        }
+        for (int i = 0; i < maxY; i++)
+        {
+            boundaryPos.Add(new Vector2(-1,i));
+            boundaryPos.Add(new Vector2(maxX,i));
+        }
+        return boundaryPos;
+
+    }
+    static SnakeState checkSnakeState(Snake snake, Food food, int maxX, int maxY)
+    {
+        var headPos = snake.Head.P;
+        var foodPos = food.P;
+        var bodyPos = snake.Body.Select(part => part.P);
+        var boundaryPos = getBoundaryPositions(maxX, maxY);
+        var isEating = headPos.Equals(foodPos);
+        var isDead = bodyPos.Any(bodyPos => headPos.Equals(bodyPos)) || boundaryPos.Any(pos => headPos.Equals(pos));
+
+        SnakeState state = SnakeState.Alive;
+        if (isEating) state = SnakeState.Eating;
+        if (isDead) state = SnakeState.Dead;
+        return state;
     }
     static void playSnake()
     {
         var snake = new Snake();
         var food = new Food();
+        int boardX = 20;
+        int boardY = 20;
+        var (initX, initY) = Console.GetCursorPosition();
 
+        int loop = 0;
         while (true)
         {
             Thread.Sleep(500);
-            displaySnakeBoard(snake, food);
+            displaySnakeBoard(snake, food, boardX, boardY);
+
+            var prevSnake = new Snake(snake);
             var prevDirection = snake.Head.Direction;
             var inputKey = Console.ReadKey(true).Key;
             if (inputKey == ConsoleKey.Escape) { break; }
@@ -188,8 +136,28 @@ class SnakeGame
                 _ => prevDirection,
             };
             snake.Head.Direction = outputDirection;
-            checkSnakeState();
+
             snake.Walk();
+
+            var snakeState = checkSnakeState(snake, food, boardX, boardY);
+            if (snakeState == SnakeState.Dead)
+            {
+                displayLose();
+                break;
+            }
+            if (snakeState == SnakeState.Win)
+            {
+                displayWin();
+                break;
+            }
+            if (snakeState == SnakeState.Eating)
+            {
+                if (snake.Body.Count() == 0) snake.AddBody(prevSnake.Head);
+                else snake.AddBody(prevSnake.Body.Last());
+                food.generateNewFood(boardX, boardY, loop * 5);
+            }
+
+            loop++;
         }
 
         Console.ReadKey(true);
