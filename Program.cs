@@ -118,6 +118,7 @@ partial class SnakeGame
         var (initX, initY) = Console.GetCursorPosition();
 
         int loop = 0;
+        int score = 0;
         while (true)
         {
             Thread.Sleep(500);
@@ -125,29 +126,32 @@ partial class SnakeGame
 
             var prevSnake = new Snake(snake);
             var prevDirection = snake.Head.Direction;
-            var inputKey = Console.ReadKey(true).Key;
-            if (inputKey == ConsoleKey.Escape) { break; }
-            var outputDirection = inputKey switch
+            if (Console.KeyAvailable)
             {
-                ConsoleKey.UpArrow => Direction.North,
-                ConsoleKey.DownArrow => Direction.South,
-                ConsoleKey.RightArrow => Direction.East,
-                ConsoleKey.LeftArrow => Direction.West,
-                _ => prevDirection,
-            };
-            snake.Head.Direction = outputDirection;
+                var inputKey = Console.ReadKey(true).Key;
+                if (inputKey == ConsoleKey.Escape) { break; }
+                var outputDirection = inputKey switch
+                {
+                    ConsoleKey.UpArrow => Direction.North,
+                    ConsoleKey.DownArrow => Direction.South,
+                    ConsoleKey.RightArrow => Direction.East,
+                    ConsoleKey.LeftArrow => Direction.West,
+                    _ => prevDirection,
+                };
+                snake.Head.Direction = outputDirection;
+            }
 
             snake.Walk();
 
             var snakeState = checkSnakeState(snake, food, boardX, boardY);
             if (snakeState == SnakeState.Dead)
             {
-                displayLose();
+                displayLose(loop * 0.5, score);
                 break;
             }
             if (snakeState == SnakeState.Win)
             {
-                displayWin();
+                displayWin(loop * 0.5, score);
                 break;
             }
             if (snakeState == SnakeState.Eating)
@@ -155,6 +159,7 @@ partial class SnakeGame
                 if (snake.Body.Count() == 0) snake.AddBody(prevSnake.Head);
                 else snake.AddBody(prevSnake.Body.Last());
                 food.generateNewFood(boardX, boardY, loop * 5);
+                score++;
             }
 
             loop++;
