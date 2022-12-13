@@ -111,7 +111,7 @@ class SnakeGame
         int cy = 2 * y + 1;
         return (cx, cy);
     }
-    static void displaySnake(Snake snake, string[] board)
+    static void displaySnake(Snake snake, Food food, string[] board)
     {
         var SnakePoints = snake.getAllPoints();
         var (initX, initY) = Console.GetCursorPosition();
@@ -131,10 +131,15 @@ class SnakeGame
                 Console.Write(board[(int)Sprite.SnakeBody]);
             }
         }
+        var fpoint = food.P;
+        var (fcursorX, fcursorY) = getcursorPos(Convert.ToInt32(fpoint.X), Convert.ToInt32(fpoint.Y));
+        Console.SetCursorPosition(fcursorX, fcursorY);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write(board[(int)Sprite.Food]);
 
         Console.SetCursorPosition(initX, initY);
     }
-    static void displaySnakeBoard(Snake snake)
+    static void displaySnakeBoard(Snake snake, Food food)
     {
         Console.Clear();
         Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -156,23 +161,35 @@ class SnakeGame
             }
         }
 
-        displaySnake(snake, board);
+        displaySnake(snake, food, board);
+    }
+    static void checkSnakeState()
+    {
+        
     }
     static void playSnake()
     {
         var snake = new Snake();
-        int loop = 0;
+        var food = new Food();
+
         while (true)
         {
             Thread.Sleep(500);
-            displaySnakeBoard(snake);
-            snake.Walk();
-            
-            loop++;
-            if (loop >= 8)
+            displaySnakeBoard(snake, food);
+            var prevDirection = snake.Head.Direction;
+            var inputKey = Console.ReadKey(true).Key;
+            if (inputKey == ConsoleKey.Escape) { break; }
+            var outputDirection = inputKey switch
             {
-                break;
-            }
+                ConsoleKey.UpArrow => Direction.North,
+                ConsoleKey.DownArrow => Direction.South,
+                ConsoleKey.RightArrow => Direction.East,
+                ConsoleKey.LeftArrow => Direction.West,
+                _ => prevDirection,
+            };
+            snake.Head.Direction = outputDirection;
+            checkSnakeState();
+            snake.Walk();
         }
 
         Console.ReadKey(true);

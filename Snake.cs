@@ -11,6 +11,10 @@ enum Direction
 class Food
 {
     public Vector2 P { get; set; }
+    public Food()
+    {
+        P = new Vector2(10,10);
+    }
     public Food(int x, int y)
     {
         P = new Vector2(x, y);
@@ -47,10 +51,10 @@ class Snake
         switch (dir)
         {
             case Direction.North:
-                y--;
+                y++;
                 break;
             case Direction.South:
-                y++;
+                y--;
                 break;
             case Direction.East:
                 x--;
@@ -73,10 +77,10 @@ class Snake
         switch (hdir)
         {
             case Direction.North:
-                hy++;
+                hy--;
                 break;
             case Direction.South:
-                hy--;
+                hy++;
                 break;
             case Direction.East:
                 hx++;
