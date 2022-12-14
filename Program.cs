@@ -10,14 +10,6 @@ enum Sprite {
     SnakeBody,
     Food
 }
-
-public static class extensionMethods
-{
-    public static string ExtendedToString(this List<Vector2> list)
-    {
-        return String.Join(" , ", list.Select(x => x.ToString()));
-    } 
-}
 partial class SnakeGame
 {
     // Snake Board (0, 0) starts at top left of the screen 
@@ -30,8 +22,6 @@ partial class SnakeGame
     static void displaySnake(Snake snake, Food food, string[] board)
     {
         List<Vector2> SnakePoints = snake.getAllPoints();
-        Console.Write("\b \b\b \b\b \b");
-        Console.WriteLine(SnakePoints.ExtendedToString());
         var (initX, initY) = Console.GetCursorPosition();
         for (int i = 0; i < SnakePoints.Count; i++)
         {
@@ -95,7 +85,7 @@ partial class SnakeGame
         return boundaryPos;
 
     }
-    static SnakeState checkSnakeState(Snake snake, Food food, int maxX, int maxY)
+    static void checkSnakeState(Snake snake, Food food, int maxX, int maxY)
     {
         var headPos = snake.Head.P;
         var foodPos = food.P;
@@ -107,21 +97,22 @@ partial class SnakeGame
         SnakeState state = SnakeState.Alive;
         if (isEating) state = SnakeState.Eating;
         if (isDead) state = SnakeState.Dead;
-        return state;
+        snake.state = state;
     }
-    static void playSnake()
+    
+    static void playSnake(Options options)
     {
-        var snake = new Snake();
+        int boardX = options.boardX;
+        int boardY = options.boardY;
+        SnakeSpeed speed = options.speed;
+        var snake = new Snake(speed);
         var food = new Food();
-        int boardX = 20;
-        int boardY = 20;
-        var (initX, initY) = Console.GetCursorPosition();
 
         int loop = 0;
         int score = 0;
         while (true)
         {
-            Thread.Sleep(500);
+            Thread.Sleep((int)snake.speed);
             displaySnakeBoard(snake, food, boardX, boardY);
 
             var prevSnake = new Snake(snake);
@@ -143,7 +134,8 @@ partial class SnakeGame
 
             snake.Walk();
 
-            var snakeState = checkSnakeState(snake, food, boardX, boardY);
+            checkSnakeState(snake, food, boardX, boardY);
+            SnakeState snakeState = snake.state;
             if (snakeState == SnakeState.Dead)
             {
                 displayLose(loop * 0.5, score);
@@ -171,19 +163,27 @@ partial class SnakeGame
     {
         setup();
         
+        Options options = new Options();
         string selectedMenu;
         do
         {            
-            selectedMenu = displayMenu();
+            selectedMenu = displayStartMenu();
             if (selectedMenu == "Mechanics")
             {
                 displayMechanics();
                 setup();
                 continue;
             } 
+            else if (selectedMenu == "Options")
+            {
+                options = displayOptions();
+                setup();
+                continue;
+            }
             else if (selectedMenu == "Play")
             {
-                playSnake();
+                Console.Clear(); //to remove leftover title text if board size is small
+                playSnake(options);
                 setup();
                 continue;
             }

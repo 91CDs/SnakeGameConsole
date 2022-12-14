@@ -32,10 +32,14 @@ class Snake
 {
     public SnakePart Head { get; set; }
     public List<SnakePart> Body { get; set;}
-    public Snake() 
+    public SnakeState state { get; set; }
+    public SnakeSpeed speed { get; set; }
+    public Snake(SnakeSpeed _speed) 
     {
         Head = new SnakePart();
         Body = new List<SnakePart>();
+        state = SnakeState.Alive;
+        speed = _speed;
     }
     public Snake(Snake snake)
     {
@@ -159,4 +163,11 @@ enum SnakeState
     Alive,
     Eating,
     Win
+}
+
+enum SnakeSpeed
+{
+    Slow = 1250,
+    Medium = 750,
+    Fast = 250
 }

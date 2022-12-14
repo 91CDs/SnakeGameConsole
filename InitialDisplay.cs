@@ -40,16 +40,8 @@ partial class SnakeGame
             }
         }
     }
-    static string displayMenu()
+    static string displayMenu(string[] menus, string cursor)
     {
-        var display = new AsciiArt("Snake Game");
-        Console.WriteLine(display.ToString());   
-        Console.WriteLine("By 91CDs");
-        Console.WriteLine();
-
-        string[] menus = { "Mechanics", "Play", "Exit" };
-        string cursor = "  <";  
-
         ConsoleKey keypress;
         int cursorIndex = 0;
         int loop = 0;
@@ -60,7 +52,7 @@ partial class SnakeGame
             {
                 removeMenu(menus, cursor);
             }
-            addMenu(menus, cursor,cursorIndex);
+            addMenu(menus, cursor, cursorIndex);
             loop++;
 
             keypress = Console.ReadKey(true).Key;
@@ -77,6 +69,18 @@ partial class SnakeGame
         removeMenu(menus, cursor);
         return menus[cursorIndex];
     }
+    static string displayStartMenu()
+    {
+        var display = new AsciiArt("Snake Game");
+        Console.WriteLine(display.ToString());   
+        Console.WriteLine("By 91CDs");
+        Console.WriteLine();
+
+        string[] startMenus = { "Mechanics", "Play", "Options", "Exit" };
+        string cursor = "  <";  
+
+        return displayMenu(startMenus, cursor);
+    }
     #endregion
     static void displayMechanics()
     {
@@ -91,5 +95,66 @@ partial class SnakeGame
         );
         Console.WriteLine("Press any key to go back to menu screen");
         Console.ReadKey(true);
+    }
+    static Options displayOptions()
+    {
+        string cursor = "  <";
+        Options options;
+        do
+        {    
+            Console.Clear();
+            Console.WriteLine("Options \n");
+
+            Console.WriteLine("Size: ");
+            string[] sizeMenu = { "Small", "Medium", "Large" };
+            string selectSize = displayMenu(sizeMenu, cursor);
+            Console.WriteLine(selectSize);
+            Console.WriteLine();
+
+            Console.WriteLine("Speed: ");
+            string[] speedMenu = { "Slow", "Medium", "Fast" };
+            string selectSpeed = displayMenu(speedMenu, cursor);
+            Console.WriteLine(selectSpeed);
+
+            SnakeSpeed speed = selectSpeed switch
+            {
+                "Slow" => SnakeSpeed.Slow,
+                "Medium" => SnakeSpeed.Medium,
+                "Fast" => SnakeSpeed.Fast,
+                _ => throw new ArgumentOutOfRangeException($"Invalid speed: {selectSpeed}"),
+            };
+            var (boardX, boardY) = selectSize switch
+            {
+                "Small" => (15,15),
+                "Medium" => (20,20),
+                "Large" => (25,25),
+                _ => throw new ArgumentOutOfRangeException($"Invalid size: {selectSize}"),
+            };
+
+            options = new Options(boardX, boardY, speed);
+
+            Console.WriteLine("Press [Enter] to save changes or press any other key to start again");
+        } while (Console.ReadKey(true).Key != ConsoleKey.Enter);
+        return options;
+    }
+}
+
+class Options
+{
+    public int boardX { get; set; }
+    public int boardY { get; set; }
+    public SnakeSpeed speed { get; set; }
+    public Options()
+    {
+        boardX = 20;
+        boardY = 20;
+        speed = SnakeSpeed.Medium;
+    }
+
+    public Options(int boardXsize, int boardYsize, SnakeSpeed snakeSpeed)
+    {
+        boardX = boardXsize;
+        boardY = boardYsize;
+        speed = snakeSpeed;
     }
 }
